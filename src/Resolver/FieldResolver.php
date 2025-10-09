@@ -16,15 +16,14 @@ final class FieldResolver
 
     public function resolve(FieldDefinition $field, array $utilities): FieldResult
     {
-        $prefix = $this->buildPrefix();
-        $options = $this->buildOptions($field->options, $utilities, $prefix);
+        $options = $this->buildOptions($field->options, $utilities);
 
         $reference = !empty($field->reference)
-            ? $this->buildReferences($field->reference, $options, $prefix)
+            ? $this->buildReferences($field->reference)
             : [];
 
         $default = $field->default
-            ? $this->buildDefault($field->default, $prefix, $options)
+            ? $this->buildDefault($field->default, $options)
             : null;
 
         return new FieldResult(
@@ -35,13 +34,7 @@ final class FieldResolver
         );
     }
 
-    private function buildPrefix(): string
-    {
-        $prefix = $this->utilityResolver->getTheme()->prefix;
-        return $prefix ? $prefix . '-' : '';
-    }
-
-    private function buildOptions(array $optionsConfig, array $utilities, string $prefix): array
+    private function buildOptions(array $optionsConfig, array $utilities): array
     {
         $options = [];
 
@@ -53,35 +46,23 @@ final class FieldResolver
                     continue;
                 }
 
-                $classes = $this->utilityResolver->resolve($utilities[$key]);
+                $classes = $this->utilityResolver->resolve($utilities[$key], false);
                 $options = array_merge($options, $classes);
             } else {
-                $options[] = $prefix . $option;
+                $options[] = $option;
             }
         }
 
         return array_values(array_unique($options));
     }
 
-    private function buildReferences(array $references, array $options, string $prefix): array
+    private function buildReferences(array $references): array
     {
-        $result = [];
-
-        foreach ($references as $key => $label) {
-            $result[$prefix . $key] = $label;
-        }
-
-        return $result;
+        return $references;
     }
 
-    private function buildDefault(string $default, string $prefix, array $options = []): ?string
+    private function buildDefault(string $default, array $options = []): ?string
     {
-        $prefixedDefault = $prefix . $default;
-
-        if (in_array($prefixedDefault, $options, true)) {
-            return $prefixedDefault;
-        }
-
-        return null;
+        return in_array($default, $options, true) ? $default : null;
     }
 }

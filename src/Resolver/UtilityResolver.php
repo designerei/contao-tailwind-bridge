@@ -14,10 +14,10 @@ final class UtilityResolver
     ) {
     }
 
-    public function resolve(UtilityDefinition $utility): array
+    public function resolve(UtilityDefinition $utility, bool $usePrefix = true): array
     {
         $values = $this->resolveValues($utility->values);
-        $prefix = $this->buildPrefix();
+        $prefix = $usePrefix && $this->theme->prefix ? $this->theme->prefix . '-' : '';
         $classes = $this->buildBaseClasses($utility->names, $values, $prefix);
 
         if ($utility->responsive) {
@@ -25,11 +25,6 @@ final class UtilityResolver
         }
 
         return array_values(array_unique($classes));
-    }
-
-    private function buildPrefix(): string
-    {
-        return $this->theme->prefix ? $this->theme->prefix . '-' : '';
     }
 
     private function buildBaseClasses(array $names, array $values, string $prefix): array

@@ -15,7 +15,6 @@ final class SafelistGenerator
     public function __construct(
         private readonly UtilityResolver $utilityResolver,
         private readonly ThemeDefinition $theme,
-
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir,
     ) {
@@ -31,7 +30,6 @@ final class SafelistGenerator
 
         $content = $this->buildContent($classes);
         $path = $this->buildFilePath();
-
         $this->writeFile($path, $content);
 
         return $path;
@@ -46,14 +44,40 @@ final class SafelistGenerator
                 continue;
             }
 
-            $resolved = $this->utilityResolver->resolve($utility);
+            $resolved = $this->utilityResolver->resolve($utility, false);
             if (!empty($resolved)) {
-                $classes[] = $resolved;
+                $classes[] = $this->applyPrefixAfterVariants($resolved);
             }
         }
 
-        // Flatten nested arrays and remove duplicates
         return array_values(array_unique(array_merge(...$classes)));
+    }
+
+    private function applyPrefixAfterVariants(array $classes): array
+    {
+        $prefix = rtrim((string) ($this->theme->prefix ?? ''), '-');
+        if ($prefix === '') {
+            return $classes;
+        }
+        $prefix .= '-';
+
+        return array_map(static function (string $class) use ($prefix): string {
+            $pos = strrpos($class, ':');
+            if ($pos !== false) {
+                $variant = substr($class, 0, $pos + 1);
+                $base = substr($class, $pos + 1);
+                if (str_starts_with($base, $prefix)) {
+                    return $class;
+                }
+                return $variant . $prefix . $base;
+            }
+
+            if (str_starts_with($class, $prefix)) {
+                return $class;
+            }
+
+            return $prefix . $class;
+        }, $classes);
     }
 
     private function buildContent(array $classes): string
