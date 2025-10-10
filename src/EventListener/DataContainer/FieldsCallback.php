@@ -73,15 +73,21 @@ final class FieldsCallback
 
     private function groupByBreakpoint(array $options): array
     {
+        $hasBreakpoints = false;
         $grouped = ['General' => []];
 
         foreach ($options as $option) {
             if (str_contains($option, ':')) {
+                $hasBreakpoints = true;
                 [$breakpoint, $class] = explode(':', $option, 2);
                 $grouped[$breakpoint][] = $option;
             } else {
-                $grouped[''][] = $option;
+                $grouped['—'][] = $option;
             }
+        }
+
+        if (!$hasBreakpoints) {
+            return $options;
         }
 
         return array_filter($grouped);
