@@ -4,95 +4,40 @@ declare(strict_types=1);
 
 namespace designerei\ContaoTailwindBridgeBundle\Generator;
 
-use designerei\ContaoTailwindBridgeBundle\Model\ThemeDefinition;
-use designerei\ContaoTailwindBridgeBundle\Model\UtilityDefinition;
-use designerei\ContaoTailwindBridgeBundle\Resolver\UtilityResolver;
+
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
+use designerei\ContaoTailwindBridgeBundle\Resolver\UtilitiesResolver;
+use designerei\ContaoTailwindBridgeBundle\Resolver\ConfigResolver;
 
 final class SafelistGenerator
 {
     public function __construct(
-        private readonly UtilityResolver $utilityResolver,
-        private readonly ThemeDefinition $theme,
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir,
-    ) {
-    }
+        private readonly UtilitiesResolver $utilities,
+        private readonly ConfigResolver $config,
+    ) {}
 
-    public function generate(array $utilities): string
+    public function generate(): string
     {
-        $classes = $this->collectClasses($utilities);
+        $classes = $this->utilities->resolveUtilitiesClasses();
 
         if (empty($classes)) {
             throw new \RuntimeException('No classes were generated for the Tailwind safelist.');
         }
 
-        $content = $this->buildContent($classes);
+        $content = implode(' ', $classes);
         $path = $this->buildFilePath();
         $this->writeFile($path, $content);
 
         return $path;
     }
 
-    private function collectClasses(array $utilities): array
-    {
-        $classes = [];
-
-        foreach ($utilities as $utility) {
-            if (!$utility instanceof UtilityDefinition) {
-                continue;
-            }
-
-            $resolved = $this->utilityResolver->resolve($utility, false);
-            if (!empty($resolved)) {
-                $classes[] = $this->applyPrefixAfterVariants($resolved);
-            }
-        }
-
-        return array_values(array_unique(array_merge(...$classes)));
-    }
-
-    private function applyPrefixAfterVariants(array $classes): array
-    {
-        $prefix = rtrim((string) ($this->theme->prefix ?? ''), '-');
-        if ($prefix === '') {
-            return $classes;
-        }
-        $prefix .= '-';
-
-        return array_map(static function (string $class) use ($prefix): string {
-            $pos = strrpos($class, ':');
-            if ($pos !== false) {
-                $variant = substr($class, 0, $pos + 1);
-                $base = substr($class, $pos + 1);
-                if (str_starts_with($base, $prefix)) {
-                    return $class;
-                }
-                return $variant . $prefix . $base;
-            }
-
-            if (str_starts_with($class, $prefix)) {
-                return $class;
-            }
-
-            return $prefix . $class;
-        }, $classes);
-    }
-
-    private function buildContent(array $classes): string
-    {
-        $isMinified = (bool) ($this->theme->safelist['minified'] ?? true);
-
-        return $isMinified
-            ? implode(' ', $classes)
-            : implode(PHP_EOL, $classes);
-    }
-
     private function buildFilePath(): string
     {
-        $relativeDir = $this->theme->safelist['dir'] ?? 'var/tailwind';
-        $filename = ($this->theme->safelist['filename'] ?? 'safelist') . '.txt';
+        $relativeDir = $this->config->getSafelist('dir') ?? 'var/tailwind';
+        $filename = ($this->config->getSafelist('filename') ?? 'safelist') . '.txt';
 
         $dir = rtrim($this->projectDir . '/' . ltrim($relativeDir, '/'), '/');
         $path = $dir . '/' . $filename;

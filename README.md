@@ -43,9 +43,6 @@ theme:
 
     # Name of the generated file (without extension).
     filename: '<filename>'
-
-    # Whether the safelist file should be minified (single-line output).
-    minified: true | false
 ```
 
 ## 🧩 utilities.yaml
@@ -95,14 +92,6 @@ fields:
 ```
 
 ## Commands
-
-### Debug
-
-```
-bin/console tailwind:debug:theme
-bin/console tailwind:debug:utilities
-bin/console tailwind:debug:fields
-```
 
 ### Generate Safelist
 
