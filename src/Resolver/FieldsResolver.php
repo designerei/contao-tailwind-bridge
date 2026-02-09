@@ -52,13 +52,30 @@ class FieldsResolver
 
     public function getFieldReference(string $field): array
     {
-        $references = $this->loadField($field)['reference'] ?? [];
+        $reference = $this->loadField($field)['reference'] ?? [];
 
-        if (!is_array($references) || $references === []) {
+        if (!is_array($reference) || $reference === []) {
             return [];
         }
 
-        return array_merge(...array_filter($references, 'is_array'));
+        $resolvedReferences = [];
+
+        foreach ($reference as $key => $value) {
+            if (is_array($value)) {
+                foreach ($value as $k => $v) {
+                    if (is_string($k) && (is_scalar($v) || $v instanceof \Stringable)) {
+                        $resolvedReferences[$k] = (string) $v;
+                    }
+                }
+                continue;
+            }
+
+            if (is_string($key) && (is_scalar($value) || $value instanceof \Stringable)) {
+                $resolvedReferences[$key] = (string) $value;
+            }
+        }
+
+        return $resolvedReferences;
     }
 
     public function resolveField(string $field): array
