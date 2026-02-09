@@ -52,7 +52,13 @@ class FieldsResolver
 
     public function getFieldReference(string $field): array
     {
-        return $this->loadField($field)['reference'] ?? [];
+        $references = $this->loadField($field)['reference'] ?? [];
+
+        if (!is_array($references) || $references === []) {
+            return [];
+        }
+
+        return array_merge(...array_filter($references, 'is_array'));
     }
 
     public function resolveField(string $field): array

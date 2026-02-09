@@ -52,12 +52,12 @@ class FieldsCallback
             $dcaField['options'] = $this->groupByBreakpoint($values['options']);
         }
 
-        if (!empty($options['default'])) {
-            $dcaField['default'] = $options['default'];
+        if (!empty($values['default'])) {
+            $dcaField['default'] = $values['default'];
         }
 
-        if (!empty($options['reference'])) {
-            $dcaField['reference'] = $options['reference'];
+        if (!empty($values['reference'])) {
+            $dcaField['reference'] = $values['reference'];
         }
     }
 
